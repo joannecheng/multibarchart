@@ -6,6 +6,7 @@ function multiBarChart() {
   var yScale = d3.scale.linear();
   var barWidth = 10;
   var barSpacing = 4;
+  var mouseclick;
 
   var findMaxValue = function(data) {
     var maxVal = -1;
@@ -37,13 +38,17 @@ function multiBarChart() {
       .attr('fill', function(d, i) { if(i == 1) { return 'black'}} )
       .classed('set', true);
 
-    sets.selectAll('rect')
+    var rects = sets.selectAll('rect')
       .data(function(d) { return d.values; }).enter()
       .append('rect')
       .attr('width', barWidth)
       .attr('height', function(d) { return yScale(d.y) })
       .attr('x', function(d, i) { return i * (barWidth * 2 + barSpacing); })
       .attr('y', function(d) { return height - yScale(d.y) });
+
+    if (typeof mouseclick !== 'undefined') {
+      rects.on('click', mouseclick);
+    }
   }
 
   chart.width = function(value) {
@@ -64,13 +69,22 @@ function multiBarChart() {
     return margin;
   }
 
+  chart.mouseclick = function(value) {
+    if(!arguments.length) return value;
+    mouseclick = value;
+    return value;
+  }
+
   return chart;
 }
 
-var data = [{"values":[{"timestamp":1378598400000,"y":71},{"timestamp":1378684800000,"y":242},{"timestamp":1378771200000,"y":158},{"timestamp":1378857600000,"y":79},{"timestamp":1378944000000,"y":7},{"timestamp":1379030400000,"y":65},{"timestamp":1379116800000,"y":10}],"key":"chat"},{"values":[{"timestamp":1378598400000,"y":213},{"timestamp":1378684800000,"y":230},{"timestamp":1378771200000,"y":134},{"timestamp":1378857600000,"y":254},{"timestamp":1378944000000,"y":205},{"timestamp":1379030400000,"y":63},{"timestamp":1379116800000,"y":190}],"key":"offline"}];
+var data = [{"values":[{"x":1378598400000,"y":71},{"x":1378684800000,"y":242},{"x":1378771200000,"y":158},{"x":1378857600000,"y":79},{"x":1378944000000,"y":7},{"x":1379030400000,"y":65},{"x":1379116800000,"y":10}],"key":"chat"},{"values":[{"x":1378598400000,"y":213},{"x":1378684800000,"y":230},{"x":1378771200000,"y":134},{"x":1378857600000,"y":254},{"x":1378944000000,"y":205},{"x":1379030400000,"y":63},{"x":1379116800000,"y":190}],"key":"offline"}];
 
 var svg = d3.selectAll('#graphtest')
   .append('svg');
 var m = multiBarChart()
+m.mouseclick(function(event) {
+  console.log(event);
+})
 
 svg.datum(data).call(m);
