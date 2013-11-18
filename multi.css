@@ -1,0 +1,20 @@
+.bar-set0 {
+  fill: #09a7d7;
+  stroke: none;
+}
+.bar-set1 {
+  fill: #ff8882;
+  stroke: none;
+}
+
+.axis text {
+  font-size: 10px;
+  font-family: Arial, sans-serif;
+  fill: black;
+  stroke: none;
+}
+.axis path, .axis line {
+  fill: none;
+  stroke: black;
+  shape-rendering: crispEdges;
+}
