@@ -1,9 +1,11 @@
 function multiBarChart() {
-  var margin = {top: 20, right: 20, bottom: 20, left: 30}
+  var margin = {top: 20, right: 20, bottom: 40, left: 30}
   var width = 200;
   var height = 100;
   var xScale = d3.time.scale();
   var yScale = d3.scale.linear();
+  var xAttr = 'x';
+  var yAttr = 'y';
   var mouseclick;
 
   var maxValue = function(data, key) {
@@ -34,18 +36,35 @@ function multiBarChart() {
     return minVal;
   };
 
+  var calculateWidth = function(svg) {
+    return $(svg[0][0]).parent().width();
+  };
+  var calculateHeight = function(svg) {
+    return $(svg[0][0]).parent().height();
+  };
+
   function chart() {
-    var barWidth = (width - margin.left)/data[0].values.length/data.length;
-    var barSpacing = 4;
+    chart.width(calculateWidth(this));
+    chart.height(calculateHeight(this));
+    var data = this.datum();
+    var barWidth = (width - margin.left - margin.right) /
+      data[0].values.length / data.length;
+    var minBarHeight = 2;
+    var barPositioning = barWidth/2;
+    var tickSpacing = 20;
+    var barSpacing = 0;
 
     var selection = this;
-    var maxYValue = maxValue(data, 'y');
-    var maxXValue = maxValue(data, 'x');
-    var minXValue = minValue(data, 'x');
+    var maxYValue = maxValue(data, yAttr);
+    var maxXValue = maxValue(data, xAttr);
+    var minXValue = minValue(data, xAttr);
 
-    yScale.domain([0, maxYValue]).range([height, 2])
-    xScale.domain([minXValue, maxXValue]).range([0, width - margin.left]);
+    yScale.domain([0, maxYValue])
+      .range([(height - margin.bottom - margin.top), minBarHeight])
+    xScale.domain([minXValue, maxXValue])
+    .range([0, width - margin.left - margin.right]);
 
+    var numberYTicks = height / tickSpacing;
     var xAxis = d3.svg.axis()
       .scale(xScale)
       .ticks(d3.time.days, 1)
@@ -53,30 +72,43 @@ function multiBarChart() {
 
     var yAxis = d3.svg.axis()
       .scale(yScale)
-      .ticks(10)
-      .orient('left')
+      .ticks(numberYTicks)
+      .orient('left');
 
     var svg = selection
       .selectAll('g')
       .data(data);
 
-    // draw group for each set
     var sets = svg.enter()
       .append('g')
       .attr('width', width)
-      .attr("transform", function(d, i) { return 'translate('+ (margin.left + (i * (barWidth))) + ', 0)'; })
+      .attr("transform", function(d, i) {
+        return 'translate('+ (margin.left + (i * (barPositioning))) + ', 0)';
+      })
       .attr('class', function(d, i) {
         return 'bar-set' + i;
+      })
+      .attr('style', function(d) {
+        if (d.color){
+          return 'fill:' +d.color+';';
+        }
       });
 
     // draw rects for each group
-    var rects = sets.selectAll('rect')
+    var rects = sets.selectAll('rect.multibar-rect')
       .data(function(d) { return d.values; }).enter()
-      .append('rect')
-      .attr('width', barWidth)
-      .attr('height', function(d) { return height - yScale(d.y) })
-      .attr('x', function(d, i) { return i * (barWidth * data.length + barSpacing); })
-      .attr('y', function(d) { return yScale(d.y) });
+      .append('rect');
+
+    rects
+      .attr('width', barWidth/2)
+      .attr('height', function(d) {
+        return height - margin.bottom - margin.top - yScale(d[yAttr]) + minBarHeight;
+      })
+      .classed('multibar-rect', true)
+      .attr('x', function(d, i) {
+        return i * (barWidth * data.length + barSpacing) + barPositioning;
+      })
+      .attr('y', function(d) { return yScale(d[yAttr]) - minBarHeight});
 
     // mouseclick action
     if (typeof mouseclick !== 'undefined') {
@@ -87,13 +119,14 @@ function multiBarChart() {
     svg.enter().append('g')
       .classed('x-axis', true)
       .classed('axis', true)
-      .attr('transform', 'translate('+ margin.left +',' + height + ')')
+      .attr('transform', 'translate('+ margin.left +',' +
+            (height - margin.bottom - margin.top)+ ')')
       .call(xAxis);
 
     svg.enter().append('g')
       .classed('y-axis', true)
       .classed('axis', true)
-      .attr('transform', 'translate('+margin.left +',0)')
+      .attr('transform', 'translate('+margin.left+',0)')
       .call(yAxis);
   }
 
@@ -112,13 +145,31 @@ function multiBarChart() {
   chart.margin = function(value) {
     if(!arguments.length) return margin;
     margin = value;
-    return margin;
+    return chart;
+  }
+
+  chart.xAttr = function(value) {
+    if(!arguments.length) return xAttr;
+    xAttr = value;
+    return chart;
+  }
+
+  chart.yAttr = function(value) {
+    if(!arguments.length) return yAttr;
+    yAttr = value;
+    return chart;
   }
 
   chart.mouseclick = function(value) {
     if(!arguments.length) return value;
     mouseclick = value;
-    return value;
+    return chart;
+  }
+
+  chart.mouseover = function(value) {
+    if(!arguments.length) return value;
+    mouseover = value;
+    return chart;
   }
 
   return chart;
